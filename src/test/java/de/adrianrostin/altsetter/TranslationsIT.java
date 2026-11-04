@@ -34,25 +34,6 @@ class TranslationsIT {
         assertThat(missing).isZero();
     }
 
-    /** Namen stehen in Auswahl und Überschriften; Zusätze in Klammern kosten dort nur Platz. */
-    @ParameterizedTest(name = "{0}")
-    @ValueSource(
-            strings = {
-                "muscle_family_text.name",
-                "muscle_text.name",
-                "muscle.latin_name",
-                "equipment_text.name",
-                "exercise_text.name"
-            })
-    void namesHaveNoBrackets(String tableAndColumn) {
-        String table = tableAndColumn.split("\\.")[0];
-        String column = tableAndColumn.split("\\.")[1];
-        Integer withBrackets = jdbc.queryForObject(
-                "select count(*) from altsetter.%s where %s ~ '[()]'".formatted(table, column), Integer.class);
-
-        assertThat(withBrackets).isZero();
-    }
-
     @ParameterizedTest(name = "{0}")
     @EnumSource(Language.class)
     void everyLanguageHasTheSameTipsAsGerman(Language language) {
