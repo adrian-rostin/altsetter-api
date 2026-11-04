@@ -20,7 +20,9 @@ RUN --mount=type=cache,target=/root/.m2 \
 FROM eclipse-temurin:25-jre-alpine@sha256:56f273059de6b13a6b49fe0ded691ed2d0399bbee76156a8f2d385f7524a3d43 AS runtime
 WORKDIR /app
 
-RUN addgroup -S -g 1000 app && adduser -S -u 1000 -G app app
+# Sicherheitsupdates des Basis-Images sofort einspielen, nicht erst beim nächsten Image-Release.
+RUN apk upgrade --no-cache \
+ && addgroup -S -g 1000 app && adduser -S -u 1000 -G app app
 
 # Selten geänderte Schichten zuerst: Abhängigkeiten bleiben zwischen Releases im Cache.
 COPY --from=build /workspace/extracted/dependencies/ ./
