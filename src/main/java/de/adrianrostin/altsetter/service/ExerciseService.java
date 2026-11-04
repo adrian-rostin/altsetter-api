@@ -13,7 +13,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * Übungen in einer Sprache. Die Daten ändern sich nur mit einer Migration, deshalb bleibt die
+ * Übungen in einer Sprache. Die Daten ändern sich selten und nur von Hand, deshalb bleibt die
  * sortierte Liste je Sprache im Cache; geblättert wird darin (siehe {@code PageResponse#of}).
  */
 @Service

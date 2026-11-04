@@ -8,7 +8,7 @@ Aufbau und Entscheidungen hinter der API. Die lebende Dokumentation liefert Swag
 - **Basis-URL:** `https://altsetter.adrianrostin.de/api/v1`. Gleiche Domain wie die App, deshalb
   kein CORS nötig. Die Version im Pfad erlaubt später brechende Änderungen, ohne die App zu brechen.
 - **Nur lesen:** Alle Endpunkte sind `GET`. Die Daten liegen dauerhaft in der Datenbank und werden
-  nur über Migrationen geändert; eine Admin-Oberfläche kann später dazukommen.
+  nur von Hand dort geändert; eine Admin-Oberfläche kann später dazukommen.
 - **Einstieg:** `GET /api` nennt Version und Links, `GET /api/health` meldet `UP` oder `DOWN` (503).
 - **Nur was die App braucht:** Muskeln, Muskelgruppen und alle Übungen beim Start, Details beim
   Öffnen einer Übung. Gefiltert wird in der App, weil sie ohnehin alles kennt.
@@ -24,8 +24,8 @@ Aufbau und Entscheidungen hinter der API. Die lebende Dokumentation liefert Swag
 - **Fehler** als Problem Details nach RFC 9457 mit festem `type` (siehe README). Clients unterscheiden
   Fehler am `type`, nie am Text.
 - **Caching:** `ETag` und `Cache-Control: max-age=300, public`; Fehler mit `no-store`. In der API
-  liegen Katalog, sortierte Übungsliste und Details je Sprache im Speicher; die Daten ändern sich
-  nur mit einer Migration.
+  liegen Katalog, sortierte Übungsliste und Details je Sprache im Speicher; nach einer Änderung der Daten
+  wird die API neu gestartet.
 
 ## Muskeln
 

@@ -4,12 +4,12 @@
 #
 #   postgres       Superuser; nur lokal im Pod (kubectl exec), über das Netzwerk gesperrt
 #   OWNER_USER     besitzt Datenbank und Schema "altsetter", sonst keine Sonderrechte;
-#                  nur für Migrationen (tools/migrate.sh)
+#                  nur für die Datenpflege von Hand
 #   API_USER       darf sich verbinden und im Schema "altsetter" lesen, sonst nichts
 #
 # Namen und Passwörter kommen aus dem Secret altsetter-db und gehen als psql-Variablen hinein
 # (:"name" für Bezeichner, :'name' für Texte); psql setzt sie sicher in Anführungszeichen.
-# Tabellen und Daten spielt danach tools/migrate.sh ein.
+# Tabellen und Daten gehören nicht zu diesem Repository.
 set -eu
 
 psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" \

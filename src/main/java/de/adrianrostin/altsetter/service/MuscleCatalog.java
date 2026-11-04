@@ -11,7 +11,7 @@ import java.util.stream.Collectors;
 
 /**
  * Unveränderlicher Schnappschuss aller Muskeln und Muskelgruppen in fester Reihenfolge. Die Daten
- * ändern sich nur über eine neue Migration (siehe README, „Daten“).
+ * ändern sich selten und nur von Hand in der Datenbank (siehe README, „Daten“).
  */
 public final class MuscleCatalog {
 

@@ -12,7 +12,7 @@ Swagger UI gibt es nur lokal unter `http://localhost:8080/api/docs` (siehe Lokal
 | --------- | ------------------------------------------------------------------------------------- |
 | Sprache   | Java 25                                                                               |
 | Framework | Spring Boot 4.1 (Web MVC, Data JPA, Validation, Cache, Actuator), virtuelle Threads   |
-| Datenbank | PostgreSQL 17, Hibernate 7, Flyway-Migrationen                                        |
+| Datenbank | PostgreSQL 17, Hibernate 7                                                            |
 | API       | REST, Problem Details (RFC 9457), ETags, OpenAPI/Swagger über springdoc               |
 | Qualität  | Spotless (palantir-java-format), Checkstyle, JUnit 5, AssertJ, Testcontainers, JaCoCo |
 | Betrieb   | Docker (Temurin JRE, ohne Root), Kubernetes (k3s), Traefik, GitHub Actions, GHCR, Prometheus-Metriken |
@@ -56,9 +56,7 @@ src/main/java/de/adrianrostin/altsetter/
 ├── filter/        Request-ID, Rate-Limiting, Security-Header
 └── config/        Web (ETags, Cache-Header), Caches, OpenAPI, Rate-Limit-Einstellungen
 
-src/main/resources/db/migration/        Flyway: Schema und alle Daten (V1)
 tools/db-tunnel.sh, local-env.sh        Lokale Entwicklung gegen die Datenbank im Cluster
-tools/migrate.sh                        Migrationen über den Tunnel einspielen (nur bei neuen Migrationen)
 tools/deployer-kubeconfig.sh            kubeconfig mit eingeschränkten Rechten für die Pipeline
 k8s/                                    Deployment, PostgreSQL, Ingress, NetworkPolicies (Kustomize)
 k8s/setup/                              Einmalig vom Admin: Namespace, Zugang der Pipeline, Traefik
@@ -88,7 +86,7 @@ k8s/setup/                              Einmalig vom Admin: Namespace, Zugang de
   Secret, in eine `.env`, die nie eingecheckt wird.
 - **Minimale Rechte in der Datenbank:** Die API verbindet sich mit einer Rolle, die nur lesen darf
   (zusätzlich `default_transaction_read_only` und 3 s Zeitlimit pro Abfrage). Schreiben kann nur der
-  Eigentümer, und den nutzt ausschließlich `tools/migrate.sh`.
+  Eigentümer; die API nutzt ihn nie.
 - **Eingaben:** Alle Parameter sind begrenzt und geprüft, IDs nur im Format `[a-z0-9-]` (auch per
   Constraint in der Datenbank). Alle Abfragen laufen über JPA und sind parametrisiert.
 - **Header:** HSTS, eine strikte Content-Security-Policy (`default-src 'none'`), `nosniff`,
@@ -138,7 +136,7 @@ tools/local-env.sh      # einmalig: Passwort der Leserolle nach .env
 ```
 
 Die API läuft dann auf `http://localhost:8080`, Swagger UI unter `http://localhost:8080/api/docs` (nur mit dem Profil `local`, in Produktion abgeschaltet).
-Sie liest nur und spielt nie Migrationen ein. In IntelliJ reicht eine Spring-Boot-Run-Configuration
+Sie liest nur. In IntelliJ reicht eine Spring-Boot-Run-Configuration
 mit dem Profil `local`. Das Frontend (`npm start` im Projekt altsetter) leitet `/api` automatisch an
 `localhost:8080` weiter.
 
@@ -148,7 +146,6 @@ mit dem Profil `local`. Das Frontend (`npm start` im Projekt altsetter) leitet `
 | `./mvnw spotless:check checkstyle:check` | Formatierung und Code-Regeln prüfen (wie die Pipeline)            |
 | `./mvnw test`                            | Unit-Tests                                                        |
 | `./mvnw verify`                          | Dazu Integrationstests gegen Postgres in Docker und Testabdeckung |
-| `tools/migrate.sh`                       | Neue Migrationen über den Tunnel einspielen                       |
 
 ## Daten
 
@@ -159,20 +156,22 @@ mit dem Profil `local`. Das Frontend (`npm start` im Projekt altsetter) leitet `
 | Equipment     |     23 | eigene Liste                                                             |
 | Übungen       |    142 | eigene Texte und Muskelzuordnung                                         |
 
-Die Daten liegen dauerhaft in der Datenbank im Cluster; die API liest sie nur. Angelegt hat sie
-einmalig die Migration `V1__init.sql` (Schema und alle Daten), eingespielt mit `tools/migrate.sh`.
+Die Daten liegen nur in der Datenbank im Cluster, nicht in diesem Repository; die API liest sie nur.
 Ein Deploy ändert an den Daten nichts.
 
-**Daten ändern:** eine neue Migration (`V2__…sql`) anlegen und mit `tools/migrate.sh` einspielen.
-Die Integrationstests laufen gegen genau diese Migrationen, ein Fehler fällt also schon in der
-Pipeline auf.
+**Daten ändern:** direkt in der Datenbank, z. B. mit `kubectl -n altsetter exec -it postgres-0 -- psql`.
+Danach die API neu starten (`kubectl -n altsetter rollout restart deployment/altsetter-api`), weil
+sie den Katalog im Speicher hält.
+
+**Tests:** Die Integrationstests brauchen die echten Daten nicht. Hibernate legt die Tabellen in
+einem Postgres-Container aus den Entities an, `TestCatalog` füllt sie mit einem kleinen Testkatalog.
 
 ## CI/CD
 
 Jeder Push und jeder Pull Request durchläuft [`.github/workflows/ci-cd.yml`](.github/workflows/ci-cd.yml):
 
 1. **Format & Lint:** Spotless und Checkstyle
-2. **Build & Test:** Unit- und Integrationstests (Testcontainers), Testberichte als Artefakt
+2. **Build & Test:** Unit- und Integrationstests (Testcontainers mit Testkatalog), Testberichte als Artefakt
 3. **Docker image:** Multi-Stage-Build mit Spring-Boot-Schichten, Sicherheitsscan mit Trivy, auf
    `main` Push nach `ghcr.io/adrian-rostin/altsetter-api`
 4. **Deploy** (nur `main`): `kubectl apply -k k8s` mit dem Commit-Tag des Images, danach wird auf
@@ -196,7 +195,7 @@ Alles läuft im Namespace `altsetter`, der in Rancher zum Projekt „adrian“ g
 | Rolle           | Rechte                                   | Genutzt von                         |
 | --------------- | ---------------------------------------- | ----------------------------------- |
 | `postgres`      | Superuser, nur lokal im Pod              | Wartung per `kubectl exec`          |
-| `altsetter`     | besitzt Datenbank und Schema, sonst nichts | nur `tools/migrate.sh`            |
+| `altsetter`     | besitzt Datenbank und Schema, sonst nichts | Datenpflege von Hand              |
 | `altsetter_api` | darf nur lesen (Rechte und read-only)    | die API, lokale Entwicklung         |
 
 Alle Zugangsdaten liegen im Secret `altsetter-db` und nicht im Repository. Die Rollen legt
@@ -215,7 +214,6 @@ kubectl -n altsetter create secret generic altsetter-db \
   --from-literal=api-username=altsetter_api \
   --from-literal=api-password="$(openssl rand -hex 24)"
 kubectl apply -k k8s          # Postgres startet und legt Rollen und Schema an
-tools/migrate.sh              # Tabellen und Daten (V1) einspielen, über tools/db-tunnel.sh
 ```
 
 Optional, aber empfohlen:
@@ -226,9 +224,11 @@ Optional, aber empfohlen:
   `tools/deployer-kubeconfig.sh https://<api-server>:6443 | gh secret set KUBECONFIG`: Die Pipeline
   darf dann nur im Namespace `altsetter` deployen und keine Secrets lesen.
 
-Die Datenbank bleibt, wie sie ist: Deploys und Neustarts ändern nichts an ihr. Sollte sie doch
-einmal verloren gehen, lässt sie sich mit der Ersteinrichtung aus `V1__init.sql` vollständig neu
-aufbauen.
+Tabellen und Daten gehören nicht zu diesem Repository; auf einem neuen Server kommen sie aus einer
+Sicherung der bestehenden Datenbank (`pg_dump`).
+
+Die Datenbank bleibt, wie sie ist: Deploys und Neustarts ändern nichts an ihr. Das Volume bleibt
+auch beim Löschen erhalten (`Retain`).
 
 ## Lizenz
 

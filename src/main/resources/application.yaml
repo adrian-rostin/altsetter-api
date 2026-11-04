@@ -1,8 +1,8 @@
 # Grundkonfiguration. Zugangsdaten stehen nie hier, sondern kommen aus Umgebungsvariablen
 #   SPRING_DATASOURCE_URL / _USERNAME / _PASSWORD
 # im Cluster aus dem Secret altsetter-db, lokal über tools/local-env.sh (.env).
-# Die API selbst liest nur (Rolle altsetter_api). Schema und Daten spielt einmalig das Profil
-# "migrate" mit der Eigentümer-Rolle ein (tools/migrate.sh, application-migrate.yaml).
+# Die API selbst liest nur (Rolle altsetter_api). Schema und Daten werden direkt in der Datenbank im
+# Cluster gepflegt, nicht aus diesem Repository.
 spring:
   # Fehlermeldungen: messages.properties (Deutsch, Standard) und messages_en.properties.
   messages:
@@ -34,13 +34,9 @@ spring:
         persistence:
           query:
             timeout: 3000
-  flyway:
-    # Nur im Profil "migrate"; die API selbst hat keine Schreibrechte.
-    enabled: false
-    locations: classpath:db/migration
-    schemas: altsetter
   cache:
-    # Muskeln und Übungen ändern sich nur über eine Migration, deshalb ohne Ablaufzeit (Namen: CacheConfig).
+    # Muskeln und Übungen ändern sich selten und nur von Hand in der Datenbank, deshalb ohne
+    # Ablaufzeit; nach einer Änderung die API neu starten (Namen: CacheConfig).
     caffeine:
       spec: maximumSize=500
   mvc:

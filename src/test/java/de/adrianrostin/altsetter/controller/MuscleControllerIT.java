@@ -20,7 +20,7 @@ class MuscleControllerIT {
     void listsAllMusclesInBodyOrderWithTheirMeshes() {
         var json = assertThat(mvc.get().uri("/api/v1/muscles")).hasStatusOk().bodyJson();
 
-        json.extractingPath("$.items.length()").isEqualTo(38);
+        json.extractingPath("$.items.length()").isEqualTo(6);
         json.extractingPath("$.items[0].id").isEqualTo("upper-chest");
         json.extractingPath("$.items[0].familyId").isEqualTo("chest");
         json.extractingPath("$.items[0].meshNames").asArray().isNotEmpty();

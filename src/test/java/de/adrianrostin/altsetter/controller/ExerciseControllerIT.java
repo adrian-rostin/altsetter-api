@@ -29,9 +29,9 @@ class ExerciseControllerIT {
 
             json.extractingPath("$.items[*].id")
                     .asArray()
-                    .containsExactly("hip-abduction-machine", "cable-hip-adduction");
-            json.extractingPath("$.totalItems").isEqualTo(142);
-            json.extractingPath("$.totalPages").isEqualTo(71);
+                    .containsExactly("barbell-bench-press", "reverse-dumbbell-fly");
+            json.extractingPath("$.totalItems").isEqualTo(3);
+            json.extractingPath("$.totalPages").isEqualTo(2);
         }
 
         @Test
@@ -48,8 +48,7 @@ class ExerciseControllerIT {
                     .containsExactly("barbell", "flat-bench");
             json.extractingPath("$.items[?(@.id == 'barbell-bench-press')].secondaryMuscles[*]")
                     .asArray()
-                    .containsExactly(
-                            "upper-chest", "lower-chest", "front-delts", "triceps-lateral-head", "triceps-medial-head");
+                    .containsExactly("upper-chest", "lower-chest", "front-delts");
         }
 
         @Test
@@ -61,7 +60,7 @@ class ExerciseControllerIT {
             result.bodyJson()
                     .extractingPath("$.items[*].id")
                     .asArray()
-                    .containsExactly("ab-crunch-machine", "ab-wheel-rollout");
+                    .containsExactly("barbell-bench-press", "dumbbell-lateral-raise");
         }
 
         @ParameterizedTest(name = "{0}")
@@ -84,14 +83,13 @@ class ExerciseControllerIT {
                     .bodyJson();
 
             json.extractingPath("$.name").isEqualTo("Bankdrücken mit der Langhantel");
-            json.extractingPath("$.cues[0]").isEqualTo("Füße fest am Boden, Schulterblätter zusammen und nach unten.");
-            json.extractingPath("$.cues.length()").isEqualTo(3);
-            json.extractingPath("$.mistakes.length()").isEqualTo(3);
+            json.extractingPath("$.cues[0]").isEqualTo("Füße fest am Boden.");
+            json.extractingPath("$.cues.length()").isEqualTo(2);
+            json.extractingPath("$.mistakes.length()").isEqualTo(1);
             json.extractingPath("$.muscles.primary[0].name").isEqualTo("Mittlere Brust");
             json.extractingPath("$.muscles.secondary[*].id")
                     .asArray()
-                    .containsExactly(
-                            "upper-chest", "lower-chest", "front-delts", "triceps-lateral-head", "triceps-medial-head");
+                    .containsExactly("upper-chest", "lower-chest", "front-delts");
         }
 
         @Test
@@ -104,9 +102,9 @@ class ExerciseControllerIT {
             json.extractingPath("$.name").isEqualTo("Barbell Bench Press");
             json.extractingPath("$.equipment[0].name").isEqualTo("Barbell");
             json.extractingPath("$.muscles.primary[0].name").isEqualTo("Mid Chest");
-            json.extractingPath("$.cues[0]").isEqualTo("Feet planted, shoulder blades together and down.");
-            json.extractingPath("$.cues.length()").isEqualTo(3);
-            json.extractingPath("$.mistakes.length()").isEqualTo(3);
+            json.extractingPath("$.cues[0]").isEqualTo("Feet planted.");
+            json.extractingPath("$.cues.length()").isEqualTo(2);
+            json.extractingPath("$.mistakes.length()").isEqualTo(1);
         }
 
         @Test

@@ -9,18 +9,19 @@ import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.context.annotation.Import;
 
 /**
- * Startet die ganze Anwendung gegen ein echtes Postgres in Docker, in das Flyway die echte Migration
- * mit allen Daten einspielt. Die Tests prüfen also gegen genau den Katalog, der auch im Cluster liegt.
- * Alle Tests teilen sich den Kontext und damit einen Container.
+ * Startet die ganze Anwendung gegen ein echtes Postgres in Docker. Hibernate legt die Tabellen dort
+ * aus den Entities an, {@link TestCatalog} füllt sie mit einem kleinen Testkatalog. Die echten Daten
+ * liegen nur in der Datenbank im Cluster. Alle Tests teilen sich den Kontext und damit einen Container.
  */
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)
 @SpringBootTest(
         properties = {
-            "spring.flyway.enabled=true",
+            "spring.jpa.hibernate.ddl-auto=create-drop",
+            "spring.jpa.properties.hibernate.hbm2ddl.create_namespaces=true",
             "altsetter.rate-limit.enabled=false",
             "springdoc.api-docs.enabled=true"
         })
 @AutoConfigureMockMvc
-@Import(TestcontainersConfiguration.class)
+@Import({TestcontainersConfiguration.class, TestCatalog.class})
 public @interface IntegrationTest {}
