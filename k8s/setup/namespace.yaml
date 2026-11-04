@@ -1,0 +1,10 @@
+# Gehört in Rancher zum Projekt "adrian" (local:p-chcq7).
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: altsetter
+  labels:
+    app.kubernetes.io/part-of: altsetter
+    field.cattle.io/projectId: p-chcq7
+  annotations:
+    field.cattle.io/projectId: local:p-chcq7

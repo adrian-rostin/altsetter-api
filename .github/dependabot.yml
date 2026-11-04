@@ -1,0 +1,25 @@
+# Wöchentliche Updates für Abhängigkeiten, Actions und Basis-Images. Sicherheitsupdates kommen
+# unabhängig davon sofort.
+version: 2
+updates:
+  - package-ecosystem: maven
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      maven:
+        patterns: ['*']
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      actions:
+        patterns: ['*']
+
+  # Dockerfile und das Postgres-Image in k8s/
+  - package-ecosystem: docker
+    directories: [/, /k8s]
+    schedule:
+      interval: weekly

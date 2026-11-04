@@ -1,0 +1,14 @@
+.git
+.github
+.idea
+.vscode
+.claude
+.env
+*.iml
+target
+k8s
+tools
+docs
+README.md
+Dockerfile
+.dockerignore

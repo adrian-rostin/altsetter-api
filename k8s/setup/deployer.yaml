@@ -1,0 +1,56 @@
+# Zugang für die Pipeline: darf nur im Namespace altsetter deployen, nichts im restlichen Cluster
+# und keine Secrets lesen. Einmalig von einem Admin anzulegen (siehe README, „Ersteinrichtung“);
+# tools/deployer-kubeconfig.sh baut daraus die kubeconfig für das GitHub-Secret KUBECONFIG.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: github-deployer
+  namespace: altsetter
+automountServiceAccountToken: false
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: github-deployer-token
+  namespace: altsetter
+  annotations:
+    kubernetes.io/service-account.name: github-deployer
+type: kubernetes.io/service-account-token
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: github-deployer
+  namespace: altsetter
+rules:
+  # Genau die Ressourcen aus k8s/kustomization.yaml
+  - apiGroups: ['apps']
+    resources: ['deployments', 'statefulsets']
+    verbs: ['get', 'list', 'watch', 'create', 'update', 'patch']
+  - apiGroups: ['']
+    resources: ['services', 'configmaps']
+    verbs: ['get', 'list', 'watch', 'create', 'update', 'patch']
+  - apiGroups: ['networking.k8s.io']
+    resources: ['ingresses', 'networkpolicies']
+    verbs: ['get', 'list', 'watch', 'create', 'update', 'patch']
+  # Für "kubectl rollout status"
+  - apiGroups: ['apps']
+    resources: ['replicasets']
+    verbs: ['get', 'list', 'watch']
+  - apiGroups: ['']
+    resources: ['pods']
+    verbs: ['get', 'list', 'watch']
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: github-deployer
+  namespace: altsetter
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: github-deployer
+subjects:
+  - kind: ServiceAccount
+    name: github-deployer
+    namespace: altsetter

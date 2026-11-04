@@ -1,0 +1,14 @@
+# Clusterweite Einstellung für k3s: Traefik soll die echte IP der Besucher sehen. Mit der Vorgabe
+# "Cluster" ersetzt der Load Balancer von k3s (ServiceLB) sie durch eine interne Adresse, dann teilen
+# sich alle Besucher einen Rate-Limit-Eimer. Einmalig von einem Admin anzuwenden; betrifft alle Apps
+# hinter Traefik (auf einem Server mit einem Node ohne Nachteil).
+apiVersion: helm.cattle.io/v1
+kind: HelmChartConfig
+metadata:
+  name: traefik
+  namespace: kube-system
+spec:
+  valuesContent: |-
+    service:
+      spec:
+        externalTrafficPolicy: Local

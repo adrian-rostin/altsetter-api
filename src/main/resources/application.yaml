@@ -1,0 +1,131 @@
+# Grundkonfiguration. Zugangsdaten stehen nie hier, sondern kommen aus Umgebungsvariablen
+#   SPRING_DATASOURCE_URL / _USERNAME / _PASSWORD
+# im Cluster aus dem Secret altsetter-db, lokal über tools/local-env.sh (.env).
+# Die API selbst liest nur (Rolle altsetter_api). Schema und Daten spielt einmalig das Profil
+# "migrate" mit der Eigentümer-Rolle ein (tools/migrate.sh, application-migrate.yaml).
+spring:
+  # Fehlermeldungen: messages.properties (Deutsch, Standard) und messages_en.properties.
+  messages:
+    basename: messages
+    fallback-to-system-locale: false
+  application:
+    name: altsetter-api
+  threads:
+    virtual:
+      enabled: true
+  datasource:
+    hikari:
+      maximum-pool-size: 10
+      # Kein langes Warten auf eine freie Verbindung: bei Überlast lieber schnell 503 als hängende Anfragen.
+      connection-timeout: 2000
+      data-source-properties:
+        # Harte Obergrenze in Postgres selbst, für jede Abfrage der API.
+        options: "-c statement_timeout=3000"
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        # Alle Tabellen liegen im eigenen Schema "altsetter", nicht in "public".
+        default_schema: altsetter
+        default_batch_fetch_size: 100
+      jakarta:
+        persistence:
+          query:
+            timeout: 3000
+  flyway:
+    # Nur im Profil "migrate"; die API selbst hat keine Schreibrechte.
+    enabled: false
+    locations: classpath:db/migration
+    schemas: altsetter
+  cache:
+    # Muskeln und Übungen ändern sich nur über eine Migration, deshalb ohne Ablaufzeit (Namen: CacheConfig).
+    caffeine:
+      spec: maximumSize=500
+  mvc:
+    problemdetails:
+      enabled: true
+
+server:
+  port: 8080
+  shutdown: graceful
+  # Traefik liefert die Besucher-IP per X-Forwarded-For; Tomcat glaubt das nur internen Adressen.
+  forward-headers-strategy: native
+  tomcat:
+    # Wer seine Anfrage nicht zügig schickt, wird getrennt (Schutz gegen Slowloris).
+    connection-timeout: 5s
+    keep-alive-timeout: 20s
+    max-keep-alive-requests: 200
+  compression:
+    enabled: true
+    mime-types: application/json,application/problem+json
+  error:
+    include-message: never
+    include-stacktrace: never
+
+# Health-Checks und Metriken auf eigenem Port, nicht über den Ingress erreichbar.
+management:
+  server:
+    port: 8081
+  endpoints:
+    web:
+      exposure:
+        include: health,prometheus
+  endpoint:
+    health:
+      probes:
+        enabled: true
+      # Bereit ist ein Pod nur, wenn er die Datenbank erreicht. Lebendig bleibt er auch ohne, sonst
+      # würde Kubernetes bei einem Datenbankausfall alle Pods sinnlos neu starten.
+      group:
+        readiness:
+          include: readinessState,db
+  health:
+    livenessstate:
+      enabled: true
+    readinessstate:
+      enabled: true
+
+# Anfragen pro Besucher: 300 als Puffer für Seitenaufrufe, danach 150 pro Minute.
+altsetter:
+  rate-limit:
+    enabled: true
+    capacity: 300
+    refill-tokens: 150
+    refill-period: 1m
+    trust-cloudflare-header: true
+    # https://www.cloudflare.com/ips/ (Stand November 2026)
+    cloudflare-ranges:
+      - 173.245.48.0/20
+      - 103.21.244.0/22
+      - 103.22.200.0/22
+      - 103.31.4.0/22
+      - 141.101.64.0/18
+      - 108.162.192.0/18
+      - 190.93.240.0/20
+      - 188.114.96.0/20
+      - 197.234.240.0/22
+      - 198.41.128.0/17
+      - 162.158.0.0/15
+      - 104.16.0.0/13
+      - 104.24.0.0/14
+      - 172.64.0.0/13
+      - 131.0.72.0/22
+      - 2400:cb00::/32
+      - 2606:4700::/32
+      - 2803:f800::/32
+      - 2405:b500::/32
+      - 2405:8100::/32
+      - 2a06:98c0::/29
+      - 2c0f:f248::/32
+
+# Swagger UI und OpenAPI-Dokument gibt es nur lokal (application-local.yaml), nicht in Produktion.
+springdoc:
+  api-docs:
+    enabled: false
+    path: /api/docs/openapi.json
+  swagger-ui:
+    enabled: false
+    path: /api/docs
+  default-produces-media-type: application/json

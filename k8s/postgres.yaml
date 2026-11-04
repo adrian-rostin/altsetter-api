@@ -1,0 +1,158 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres
+  namespace: altsetter
+  labels:
+    app.kubernetes.io/name: postgres
+spec:
+  selector:
+    app.kubernetes.io/name: postgres
+  ports:
+    - name: postgres
+      port: 5432
+      targetPort: postgres
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: postgres
+  namespace: altsetter
+  labels:
+    app.kubernetes.io/name: postgres
+    app.kubernetes.io/part-of: altsetter
+spec:
+  serviceName: postgres
+  replicas: 1
+  # Die Daten bleiben, auch wenn das StatefulSet gelöscht oder herunterskaliert wird.
+  persistentVolumeClaimRetentionPolicy:
+    whenDeleted: Retain
+    whenScaled: Retain
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: postgres
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: postgres
+        app.kubernetes.io/part-of: altsetter
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 70
+        runAsGroup: 70
+        fsGroup: 70
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: postgres
+          image: postgres:17.6-alpine@sha256:ef257d85f76e48da1c64832459b59fcaba1a4dac97bf5d7450c77753542eee94
+          ports:
+            - name: postgres
+              containerPort: 5432
+          env:
+            - name: POSTGRES_DB
+              value: altsetter
+            # Superuser nur für Einrichtung und Wartung per kubectl exec; über das Netzwerk gesperrt.
+            - name: POSTGRES_USER
+              value: postgres
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: altsetter-db
+                  key: admin-password
+            # Prüfsummen erkennen beschädigte Datenblöcke; lokal nur der passende Linux-Benutzer (peer),
+            # über das Netzwerk nur mit Passwort (SCRAM).
+            - name: POSTGRES_INITDB_ARGS
+              value: --data-checksums --auth-local=peer --auth-host=scram-sha-256
+            # Rollen, die postgres-init.sh beim ersten Start anlegt
+            - name: OWNER_USER
+              valueFrom:
+                secretKeyRef:
+                  name: altsetter-db
+                  key: owner-username
+            - name: OWNER_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: altsetter-db
+                  key: owner-password
+            - name: API_USER
+              valueFrom:
+                secretKeyRef:
+                  name: altsetter-db
+                  key: api-username
+            - name: API_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: altsetter-db
+                  key: api-password
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ['ALL']
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+            limits:
+              memory: 512Mi
+          readinessProbe:
+            exec:
+              command: ['pg_isready', '-U', 'postgres', '-d', 'altsetter']
+            periodSeconds: 10
+          livenessProbe:
+            exec:
+              command: ['pg_isready', '-U', 'postgres', '-d', 'altsetter']
+            initialDelaySeconds: 30
+            periodSeconds: 30
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/postgresql/data
+            - name: init
+              mountPath: /docker-entrypoint-initdb.d
+              readOnly: true
+            - name: run
+              mountPath: /var/run/postgresql
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: init
+          configMap:
+            name: postgres-init
+        - name: run
+          emptyDir: {}
+        - name: tmp
+          emptyDir:
+            sizeLimit: 64Mi
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes: ['ReadWriteOnce']
+        resources:
+          requests:
+            storage: 2Gi
+---
+# Nur die API erreicht die Datenbank. Lokale Tunnel laufen über kubectl
+# port-forward und sind davon nicht betroffen.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: postgres
+  namespace: altsetter
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: postgres
+  policyTypes: ['Ingress']
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: altsetter-api
+      ports:
+        - port: postgres

@@ -1,0 +1,27 @@
+# Die API läuft unter derselben Domain wie die App, nur unter /api. Traefik leitet den längeren
+# Pfad hierher, alles andere an das Frontend. Das TLS-Zertifikat stellt cert-manager über das
+# Ingress des Frontends aus (Secret altsetter-tls); hier wird es nur mitbenutzt.
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: altsetter-api
+  namespace: altsetter
+  labels:
+    app.kubernetes.io/name: altsetter-api
+spec:
+  ingressClassName: traefik
+  tls:
+    - hosts:
+        - altsetter.adrianrostin.de
+      secretName: altsetter-tls
+  rules:
+    - host: altsetter.adrianrostin.de
+      http:
+        paths:
+          - path: /api
+            pathType: Prefix
+            backend:
+              service:
+                name: altsetter-api
+                port:
+                  name: http

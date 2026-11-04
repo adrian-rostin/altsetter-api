@@ -1,0 +1,22 @@
+# Die API ist nur über Traefik erreichbar. Port 8081 (Health, Metriken) bleibt für andere Pods im
+# Cluster zu; die Health-Checks von Kubernetes kommen vom Node selbst und sind davon nicht betroffen.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: altsetter-api
+  namespace: altsetter
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: altsetter-api
+  policyTypes: ['Ingress']
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+          podSelector:
+            matchLabels:
+              app.kubernetes.io/name: traefik
+      ports:
+        - port: http

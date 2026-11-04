@@ -1,0 +1,23 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: altsetter
+
+# Was die Pipeline bei jedem Deploy anwendet. Namespace, Zugang der Pipeline und das Secret
+# altsetter-db (owner- und api-password) legt ein Admin einmalig an: k8s/setup/ und README.
+resources:
+  - postgres.yaml
+  - deployment.yaml
+  - service.yaml
+  - ingress.yaml
+  - network-policy.yaml
+
+configMapGenerator:
+  - name: postgres-init
+    files:
+      - 10-roles.sh=postgres-init.sh
+
+# Die Pipeline setzt hier den Commit-SHA des frisch gebauten Images ein.
+images:
+  - name: ghcr.io/adrian-rostin/altsetter-api
+    newTag: latest

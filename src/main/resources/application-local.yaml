@@ -1,0 +1,17 @@
+# Lokale Entwicklung gegen die Datenbank im Cluster, getunnelt mit tools/db-tunnel.sh.
+# Benutzer und Passwort der Leserolle legt tools/local-env.sh aus dem Secret in .env ab
+# (nicht im Repository).
+spring:
+  config:
+    import: optional:file:.env[.properties]
+  datasource:
+    url: jdbc:postgresql://localhost:5432/altsetter
+    username: ${ALTSETTER_DB_USERNAME}
+    password: ${ALTSETTER_DB_PASSWORD}
+
+# Swagger UI unter http://localhost:8080/api/docs
+springdoc:
+  api-docs:
+    enabled: true
+  swagger-ui:
+    enabled: true
