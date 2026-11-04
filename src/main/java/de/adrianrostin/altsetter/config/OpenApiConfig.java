@@ -1,5 +1,6 @@
 package de.adrianrostin.altsetter.config;
 
+import de.adrianrostin.altsetter.entity.Language;
 import de.adrianrostin.altsetter.exception.ProblemType;
 import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.OpenAPI;
@@ -15,7 +16,6 @@ import io.swagger.v3.oas.models.media.StringSchema;
 import io.swagger.v3.oas.models.parameters.HeaderParameter;
 import io.swagger.v3.oas.models.responses.ApiResponse;
 import io.swagger.v3.oas.models.servers.Server;
-import de.adrianrostin.altsetter.entity.Language;
 import java.util.Arrays;
 import java.util.List;
 import org.springdoc.core.customizers.OpenApiCustomizer;
@@ -45,7 +45,8 @@ public class OpenApiConfig {
     /** Jede Operation der v1 versteht Accept-Language und nennt die gelieferte Sprache. */
     @Bean
     OpenApiCustomizer languageHeaders() {
-        List<String> codes = Arrays.stream(Language.values()).map(Language::getCode).toList();
+        List<String> codes =
+                Arrays.stream(Language.values()).map(Language::getCode).toList();
         return openApi -> openApi.getPaths().forEach((path, item) -> {
             if (!path.startsWith("/api/v1/")) {
                 return;
@@ -55,9 +56,14 @@ public class OpenApiConfig {
                         .name("Accept-Language")
                         .description("Sprache der Texte; ohne passende Angabe Deutsch")
                         .schema(new StringSchema()._enum(codes)._default(Language.DEFAULT.getCode())));
-                operation.getResponses().values().forEach(response -> response.addHeaderObject(
-                        "Content-Language",
-                        new Header().description("Gelieferte Sprache").schema(new StringSchema()._enum(codes))));
+                operation
+                        .getResponses()
+                        .values()
+                        .forEach(response -> response.addHeaderObject(
+                                "Content-Language",
+                                new Header()
+                                        .description("Gelieferte Sprache")
+                                        .schema(new StringSchema()._enum(codes))));
             });
         });
     }

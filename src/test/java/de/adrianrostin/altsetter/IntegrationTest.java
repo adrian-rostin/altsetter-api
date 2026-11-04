@@ -15,8 +15,12 @@ import org.springframework.context.annotation.Import;
  */
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)
-@SpringBootTest(properties = {"spring.flyway.enabled=true", "altsetter.rate-limit.enabled=false",
-        "springdoc.api-docs.enabled=true"})
+@SpringBootTest(
+        properties = {
+            "spring.flyway.enabled=true",
+            "altsetter.rate-limit.enabled=false",
+            "springdoc.api-docs.enabled=true"
+        })
 @AutoConfigureMockMvc
 @Import(TestcontainersConfiguration.class)
 public @interface IntegrationTest {}

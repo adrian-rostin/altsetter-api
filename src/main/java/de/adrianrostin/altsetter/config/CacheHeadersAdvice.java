@@ -48,7 +48,9 @@ public class CacheHeadersAdvice implements ResponseBodyAdvice<Object> {
             response.getHeaders().setCacheControl(cacheControl);
             response.getHeaders().add(HttpHeaders.VARY, HttpHeaders.ACCEPT_LANGUAGE);
             response.getHeaders()
-                    .set(HttpHeaders.CONTENT_LANGUAGE, Language.of(LocaleContextHolder.getLocale()).getCode());
+                    .set(
+                            HttpHeaders.CONTENT_LANGUAGE,
+                            Language.of(LocaleContextHolder.getLocale()).getCode());
         }
         return body;
     }

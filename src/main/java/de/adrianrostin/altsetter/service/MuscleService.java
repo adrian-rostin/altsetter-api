@@ -35,6 +35,8 @@ public class MuscleService {
                 .toList();
         return new MuscleCatalog(
                 familyDtos,
-                allMuscles.stream().map(muscle -> mapper.toDto(muscle, language)).toList());
+                allMuscles.stream()
+                        .map(muscle -> mapper.toDto(muscle, language))
+                        .toList());
     }
 }

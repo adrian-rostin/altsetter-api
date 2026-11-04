@@ -49,11 +49,7 @@ class ExerciseControllerIT {
             json.extractingPath("$.items[?(@.id == 'barbell-bench-press')].secondaryMuscles[*]")
                     .asArray()
                     .containsExactly(
-                            "upper-chest",
-                            "lower-chest",
-                            "front-delts",
-                            "triceps-lateral-head",
-                            "triceps-medial-head");
+                            "upper-chest", "lower-chest", "front-delts", "triceps-lateral-head", "triceps-medial-head");
         }
 
         @Test
@@ -95,11 +91,7 @@ class ExerciseControllerIT {
             json.extractingPath("$.muscles.secondary[*].id")
                     .asArray()
                     .containsExactly(
-                            "upper-chest",
-                            "lower-chest",
-                            "front-delts",
-                            "triceps-lateral-head",
-                            "triceps-medial-head");
+                            "upper-chest", "lower-chest", "front-delts", "triceps-lateral-head", "triceps-medial-head");
         }
 
         @Test

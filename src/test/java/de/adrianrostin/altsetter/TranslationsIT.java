@@ -21,12 +21,7 @@ class TranslationsIT {
 
     @ParameterizedTest(name = "{0}")
     @ValueSource(
-            strings = {
-                "muscle_family:family_id",
-                "muscle:muscle_id",
-                "equipment:equipment_id",
-                "exercise:exercise_id"
-            })
+            strings = {"muscle_family:family_id", "muscle:muscle_id", "equipment:equipment_id", "exercise:exercise_id"})
     void everyRowHasATextInEveryLanguage(String tableAndKey) {
         String table = tableAndKey.split(":")[0];
         String key = tableAndKey.split(":")[1];
@@ -42,16 +37,13 @@ class TranslationsIT {
     @ParameterizedTest(name = "{0}")
     @EnumSource(Language.class)
     void everyLanguageHasTheSameTipsAsGerman(Language language) {
-        Integer different = jdbc.queryForObject(
-                """
+        Integer different = jdbc.queryForObject("""
                 select count(*) from (
                     select exercise_id, kind, position from altsetter.exercise_tip where language = 'de'
                     except
                     select exercise_id, kind, position from altsetter.exercise_tip where language = ?
                 ) missing
-                """,
-                Integer.class,
-                language.getCode());
+                """, Integer.class, language.getCode());
 
         assertThat(different).isZero();
     }

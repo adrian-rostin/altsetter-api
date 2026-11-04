@@ -19,7 +19,7 @@ public class CacheConfig {
 
     @Bean
     CacheManagerCustomizer<CaffeineCacheManager> fixedCacheNames() {
-        return manager -> manager.setCacheNames(List.of(
-                MuscleService.CACHE, ExerciseService.SUMMARY_CACHE, ExerciseService.DETAIL_CACHE));
+        return manager -> manager.setCacheNames(
+                List.of(MuscleService.CACHE, ExerciseService.SUMMARY_CACHE, ExerciseService.DETAIL_CACHE));
     }
 }

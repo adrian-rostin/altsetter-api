@@ -61,10 +61,7 @@ public class RateLimitFilter extends OncePerRequestFilter {
     private final Cache<String, Bucket> buckets;
 
     public RateLimitFilter(
-            RateLimitProperties properties,
-            JsonMapper jsonMapper,
-            Problems problems,
-            LocaleResolver localeResolver) {
+            RateLimitProperties properties, JsonMapper jsonMapper, Problems problems, LocaleResolver localeResolver) {
         this.properties = properties;
         this.jsonMapper = jsonMapper;
         this.problems = problems;
