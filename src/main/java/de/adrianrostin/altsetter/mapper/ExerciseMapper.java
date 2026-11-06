@@ -2,6 +2,7 @@ package de.adrianrostin.altsetter.mapper;
 
 import de.adrianrostin.altsetter.dto.EquipmentDto;
 import de.adrianrostin.altsetter.dto.ExerciseDetailDto;
+import de.adrianrostin.altsetter.dto.ExerciseImageDto;
 import de.adrianrostin.altsetter.dto.ExerciseSummaryDto;
 import de.adrianrostin.altsetter.dto.MuscleDto;
 import de.adrianrostin.altsetter.dto.MuscleRef;
@@ -26,7 +27,9 @@ public class ExerciseMapper {
 
     private final EquipmentMapper equipmentMapper;
 
-    public ExerciseSummaryDto toSummary(Exercise exercise, MuscleCatalog catalog, Language language) {
+    /** {@code images}: die Fotos dieser Übung (siehe {@code ExerciseImageService#byExercise}). */
+    public ExerciseSummaryDto toSummary(
+            Exercise exercise, MuscleCatalog catalog, Language language, List<ExerciseImageDto> images) {
         ExerciseText text = exercise.text(language);
         return new ExerciseSummaryDto(
                 exercise.getId(),
@@ -35,10 +38,12 @@ public class ExerciseMapper {
                 exercise.getDifficulty(),
                 equipment(exercise, language),
                 exercise.muscleIds(MuscleRole.PRIMARY, catalog.muscleOrder()),
-                exercise.muscleIds(MuscleRole.SECONDARY, catalog.muscleOrder()));
+                exercise.muscleIds(MuscleRole.SECONDARY, catalog.muscleOrder()),
+                images);
     }
 
-    public ExerciseDetailDto toDetail(Exercise exercise, MuscleCatalog catalog, Language language) {
+    public ExerciseDetailDto toDetail(
+            Exercise exercise, MuscleCatalog catalog, Language language, List<ExerciseImageDto> images) {
         ExerciseText text = exercise.text(language);
         return new ExerciseDetailDto(
                 exercise.getId(),
@@ -50,7 +55,8 @@ public class ExerciseMapper {
                         muscleRefs(exercise, MuscleRole.PRIMARY, catalog),
                         muscleRefs(exercise, MuscleRole.SECONDARY, catalog)),
                 exercise.tips(TipKind.CUE, language),
-                exercise.tips(TipKind.MISTAKE, language));
+                exercise.tips(TipKind.MISTAKE, language),
+                images);
     }
 
     private List<EquipmentDto> equipment(Exercise exercise, Language language) {

@@ -23,6 +23,8 @@ import org.springframework.web.servlet.mvc.method.annotation.ResponseBodyAdvice;
  *
  * <p>Die Antwort hängt von {@code Accept-Language} ab: {@code Vary} sagt Caches, dass sie je Sprache
  * getrennt speichern müssen, {@code Content-Language} nennt die gelieferte Sprache.
+ *
+ * <p>Bilder (Bytes statt JSON) setzen ihre Header selbst und hängen nicht von der Sprache ab.
  */
 @RestControllerAdvice
 public class CacheHeadersAdvice implements ResponseBodyAdvice<Object> {
@@ -43,7 +45,7 @@ public class CacheHeadersAdvice implements ResponseBodyAdvice<Object> {
             Class<? extends HttpMessageConverter<?>> converterType,
             ServerHttpRequest request,
             ServerHttpResponse response) {
-        if (request.getURI().getPath().startsWith(ApiPaths.V1 + "/")) {
+        if (request.getURI().getPath().startsWith(ApiPaths.V1 + "/") && !(body instanceof byte[])) {
             CacheControl cacheControl = body instanceof ProblemDetail ? CacheControl.noStore() : CACHEABLE;
             response.getHeaders().setCacheControl(cacheControl);
             response.getHeaders().add(HttpHeaders.VARY, HttpHeaders.ACCEPT_LANGUAGE);

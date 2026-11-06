@@ -27,6 +27,7 @@ Swagger UI gibt es nur lokal unter `http://localhost:8080/api/docs` (siehe Lokal
 | `GET /api/v1/muscles`                     | Alle Muskeln mit ihren Meshes im 3D-Modell                       |
 | `GET /api/v1/exercises`                   | Alle Übungen, seitenweise und nach Name sortiert                 |
 | `GET /api/v1/exercises/{id}`              | Alle Angaben zu einer Übung                                      |
+| `GET /api/v1/exercises/{id}/images/{pos}` | Foto der Übung in Start- (`start`) oder Endstellung (`end`), WebP |
 
 Die API liefert genau das, was die App braucht: Beim Start lädt sie Muskeln, Muskelgruppen und alle
 Übungen, beim Öffnen einer Übung deren Details. IDs sind englisch, klein und mit Bindestrichen

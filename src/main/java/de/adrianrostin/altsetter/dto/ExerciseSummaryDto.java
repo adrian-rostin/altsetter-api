@@ -10,6 +10,7 @@ import java.util.List;
  * @param description kurze Beschreibung in ein bis zwei Sätzen
  * @param primaryMuscles Kennungen der Hauptmuskeln
  * @param secondaryMuscles Kennungen der mitarbeitenden Muskeln
+ * @param images Fotos, Start vor Ende; Halteübungen haben nur das Startbild, leer, wenn es keine gibt
  */
 public record ExerciseSummaryDto(
         String id,
@@ -18,4 +19,5 @@ public record ExerciseSummaryDto(
         Difficulty difficulty,
         List<EquipmentDto> equipment,
         List<String> primaryMuscles,
-        List<String> secondaryMuscles) {}
+        List<String> secondaryMuscles,
+        List<ExerciseImageDto> images) {}

@@ -8,6 +8,7 @@ import java.util.List;
  *
  * @param cues „Darauf achten“
  * @param mistakes „Häufige Fehler“
+ * @param images wie in {@link ExerciseSummaryDto#images()}
  */
 public record ExerciseDetailDto(
         String id,
@@ -17,7 +18,8 @@ public record ExerciseDetailDto(
         List<EquipmentDto> equipment,
         Muscles muscles,
         List<String> cues,
-        List<String> mistakes) {
+        List<String> mistakes,
+        List<ExerciseImageDto> images) {
 
     public record Muscles(List<MuscleRef> primary, List<MuscleRef> secondary) {}
 }

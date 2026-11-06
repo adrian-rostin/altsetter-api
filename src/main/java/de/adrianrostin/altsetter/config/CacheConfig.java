@@ -1,5 +1,6 @@
 package de.adrianrostin.altsetter.config;
 
+import de.adrianrostin.altsetter.service.ExerciseImageService;
 import de.adrianrostin.altsetter.service.ExerciseService;
 import de.adrianrostin.altsetter.service.MuscleService;
 import java.util.List;
@@ -19,7 +20,11 @@ public class CacheConfig {
 
     @Bean
     CacheManagerCustomizer<CaffeineCacheManager> fixedCacheNames() {
-        return manager -> manager.setCacheNames(
-                List.of(MuscleService.CACHE, ExerciseService.SUMMARY_CACHE, ExerciseService.DETAIL_CACHE));
+        return manager -> manager.setCacheNames(List.of(
+                MuscleService.CACHE,
+                ExerciseService.SUMMARY_CACHE,
+                ExerciseService.DETAIL_CACHE,
+                ExerciseImageService.INFO_CACHE,
+                ExerciseImageService.FILE_CACHE));
     }
 }

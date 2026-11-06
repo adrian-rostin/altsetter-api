@@ -9,7 +9,9 @@ public class NotFoundException extends RuntimeException {
     /** Was gesucht wurde; bestimmt den Text der Meldung ({@code detail.not-found.<key>}). */
     @Getter
     public enum Resource {
-        EXERCISE("exercise");
+        EXERCISE("exercise"),
+        /** Bild einer Übung; {@code id} ist die Übung. */
+        IMAGE("image");
 
         private final String key;
 

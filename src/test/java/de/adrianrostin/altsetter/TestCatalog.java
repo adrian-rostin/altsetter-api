@@ -47,15 +47,34 @@ public class TestCatalog {
             tips(jdbc, "barbell-bench-press", "de", "mistake", "Po hebt von der Bank ab.");
             tips(jdbc, "barbell-bench-press", "en", "cue", "Feet planted.", "Shoulder blades together.");
             tips(jdbc, "barbell-bench-press", "en", "mistake", "Hips lift off the bench.");
+            // Absichtlich Ende vor Start: die API sortiert selbst.
+            image(jdbc, "barbell-bench-press", "end", END_IMAGE);
+            image(jdbc, "barbell-bench-press", "start", START_IMAGE);
 
             exercise(jdbc, "dumbbell-lateral-raise", "beginner", "Seitheben mit Kurzhanteln", "Dumbbell Lateral Raise");
             uses(jdbc, "dumbbell-lateral-raise", "dumbbell");
             trains(jdbc, "dumbbell-lateral-raise", "primary", "side-delts");
+            // Wie eine Halteübung: nur ein Startbild.
+            image(jdbc, "dumbbell-lateral-raise", "start", START_IMAGE);
 
             exercise(jdbc, "reverse-dumbbell-fly", "beginner", "Reverse Flys mit Kurzhanteln", "Reverse Dumbbell Fly");
             uses(jdbc, "reverse-dumbbell-fly", "dumbbell");
             trains(jdbc, "reverse-dumbbell-fly", "primary", "rear-delts");
         };
+    }
+
+    /** Stellvertreter für Bilddateien; der Inhalt ist der API egal. */
+    public static final byte[] START_IMAGE = {'R', 'I', 'F', 'F', 1, 2, 3};
+
+    public static final byte[] END_IMAGE = {'R', 'I', 'F', 'F', 4, 5, 6};
+
+    private static void image(JdbcTemplate jdbc, String exercise, String position, byte[] data) {
+        jdbc.update(
+                "insert into altsetter.exercise_image (exercise_id, position, mime_type, width, height, data)"
+                        + " values (?, ?, 'image/webp', 1536, 1024, ?)",
+                exercise,
+                position,
+                data);
     }
 
     private static void family(JdbcTemplate jdbc, String id, String latin, int order, String de, String en) {

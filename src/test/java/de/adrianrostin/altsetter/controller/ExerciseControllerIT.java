@@ -3,6 +3,10 @@ package de.adrianrostin.altsetter.controller;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import de.adrianrostin.altsetter.IntegrationTest;
+import de.adrianrostin.altsetter.TestCatalog;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.util.HexFormat;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -144,6 +148,92 @@ class ExerciseControllerIT {
                     .bodyJson()
                     .extractingPath("$.type")
                     .isEqualTo("/api/problems/invalid-parameter");
+        }
+    }
+
+    @Nested
+    class Images {
+
+        private static final String BENCH_START =
+                "/api/v1/exercises/barbell-bench-press/images/start?v=" + version(TestCatalog.START_IMAGE);
+
+        @Test
+        void listsImagesStartBeforeEndWithVersionedUrls() {
+            var json = assertThat(mvc.get().uri("/api/v1/exercises?size=100"))
+                    .hasStatusOk()
+                    .bodyJson();
+
+            json.extractingPath("$.items[?(@.id == 'barbell-bench-press')].images[*].position")
+                    .asArray()
+                    .containsExactly("start", "end");
+            json.extractingPath("$.items[?(@.id == 'barbell-bench-press')].images[0].url")
+                    .asArray()
+                    .containsExactly(BENCH_START);
+            json.extractingPath("$.items[?(@.id == 'barbell-bench-press')].images[0].width")
+                    .asArray()
+                    .containsExactly(1536);
+            json.extractingPath("$.items[?(@.id == 'dumbbell-lateral-raise')].images[*].position")
+                    .asArray()
+                    .containsExactly("start");
+            json.extractingPath("$.items[?(@.id == 'reverse-dumbbell-fly')].images[*]")
+                    .asArray()
+                    .isEmpty();
+        }
+
+        @Test
+        void detailHasTheSameImages() {
+            assertThat(mvc.get().uri("/api/v1/exercises/barbell-bench-press"))
+                    .hasStatusOk()
+                    .bodyJson()
+                    .extractingPath("$.images[*].position")
+                    .asArray()
+                    .containsExactly("start", "end");
+        }
+
+        @Test
+        void servesVersionedImagesAsImmutable() {
+            var result = assertThat(mvc.get().uri(BENCH_START));
+
+            result.hasStatusOk().hasContentType("image/webp");
+            result.body().isEqualTo(TestCatalog.START_IMAGE);
+            result.headers().hasValue(HttpHeaders.CACHE_CONTROL, "max-age=31536000, public, immutable");
+            result.headers().doesNotContainHeader(HttpHeaders.CONTENT_LANGUAGE);
+        }
+
+        @Test
+        void keepsImagesWithoutVersionOnlyForADay() {
+            var result = assertThat(mvc.get().uri("/api/v1/exercises/barbell-bench-press/images/end"));
+
+            result.hasStatusOk();
+            result.body().isEqualTo(TestCatalog.END_IMAGE);
+            result.headers().hasValue(HttpHeaders.CACHE_CONTROL, "max-age=86400, public");
+        }
+
+        @Test
+        void answersMissingImagesWith404() {
+            var result = assertThat(mvc.get().uri("/api/v1/exercises/dumbbell-lateral-raise/images/end"));
+
+            result.hasStatus(HttpStatus.NOT_FOUND).headers().hasValue("Cache-Control", "no-store");
+            result.bodyJson().extractingPath("$.type").isEqualTo("/api/problems/not-found");
+        }
+
+        @Test
+        void rejectsUnknownPositions() {
+            assertThat(mvc.get().uri("/api/v1/exercises/barbell-bench-press/images/middle"))
+                    .hasStatus(HttpStatus.BAD_REQUEST)
+                    .bodyJson()
+                    .extractingPath("$.type")
+                    .isEqualTo("/api/problems/invalid-parameter");
+        }
+
+        private static String version(byte[] data) {
+            try {
+                return HexFormat.of()
+                        .formatHex(MessageDigest.getInstance("MD5").digest(data))
+                        .substring(0, 12);
+            } catch (NoSuchAlgorithmException e) {
+                throw new IllegalStateException(e);
+            }
         }
     }
 }

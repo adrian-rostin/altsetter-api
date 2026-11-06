@@ -1,12 +1,15 @@
 package de.adrianrostin.altsetter.service;
 
 import de.adrianrostin.altsetter.dto.ExerciseDetailDto;
+import de.adrianrostin.altsetter.dto.ExerciseImageDto;
 import de.adrianrostin.altsetter.dto.ExerciseSummaryDto;
+import de.adrianrostin.altsetter.entity.Exercise;
 import de.adrianrostin.altsetter.entity.Language;
 import de.adrianrostin.altsetter.exception.NotFoundException;
 import de.adrianrostin.altsetter.mapper.ExerciseMapper;
 import de.adrianrostin.altsetter.repository.ExerciseRepository;
 import java.util.List;
+import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
@@ -27,13 +30,15 @@ public class ExerciseService {
     private final ExerciseRepository repository;
     private final ExerciseMapper mapper;
     private final MuscleService muscleService;
+    private final ExerciseImageService imageService;
 
     /** Alle Übungen, sortiert nach dem Namen in dieser Sprache, bei Gleichstand nach ID. */
     @Cacheable(SUMMARY_CACHE)
     public List<ExerciseSummaryDto> summaries(Language language) {
         MuscleCatalog catalog = muscleService.catalog(language);
+        Map<String, List<ExerciseImageDto>> images = imageService.byExercise();
         return repository.findAllOrderedByName(language.getCode()).stream()
-                .map(exercise -> mapper.toSummary(exercise, catalog, language))
+                .map(exercise -> mapper.toSummary(exercise, catalog, language, imagesOf(exercise, images)))
                 .toList();
     }
 
@@ -41,7 +46,15 @@ public class ExerciseService {
     public ExerciseDetailDto detail(String id, Language language) {
         return repository
                 .findById(id)
-                .map(exercise -> mapper.toDetail(exercise, muscleService.catalog(language), language))
+                .map(exercise -> mapper.toDetail(
+                        exercise,
+                        muscleService.catalog(language),
+                        language,
+                        imagesOf(exercise, imageService.byExercise())))
                 .orElseThrow(() -> new NotFoundException(NotFoundException.Resource.EXERCISE, id));
+    }
+
+    private static List<ExerciseImageDto> imagesOf(Exercise exercise, Map<String, List<ExerciseImageDto>> images) {
+        return images.getOrDefault(exercise.getId(), List.of());
     }
 }

@@ -56,6 +56,7 @@ Muskel gehört. Die Reihenfolge ist fest: von oben nach unten am Körper.
 | ---------------------------------- | ------------------------------------------------------- |
 | `GET /exercises`                   | Alle Übungen, seitenweise, nach Name in der Sprache     |
 | `GET /exercises/{id}`              | Alle Details einer Übung                                |
+| `GET /exercises/{id}/images/{pos}` | Foto in Start- oder Endstellung (siehe Bilder)          |
 
 `GET /exercises` nimmt `page` (ab 0) und `size` (1–100, Standard 20). Die App holt alle 142 Übungen
 mit `size=100` in zwei Abrufen.
@@ -69,7 +70,11 @@ mit `size=100` in zwei Abrufen.
   "difficulty": "intermediate",
   "equipment": [{ "id": "barbell", "name": "Langhantel" }, { "id": "incline-bench", "name": "Schrägbank" }],
   "primaryMuscles": ["upper-chest"],
-  "secondaryMuscles": ["mid-chest", "front-delts", "triceps-lateral-head"]
+  "secondaryMuscles": ["mid-chest", "front-delts", "triceps-lateral-head"],
+  "images": [
+    { "position": "start", "url": "/api/v1/exercises/incline-barbell-bench-press/images/start?v=3f9c…", "width": 1536, "height": 1024 },
+    { "position": "end", "url": "/api/v1/exercises/incline-barbell-bench-press/images/end?v=a41d…", "width": 1536, "height": 1024 }
+  ]
 }
 ```
 
@@ -86,11 +91,22 @@ mit `size=100` in zwei Abrufen.
     "secondary": [{ "id": "mid-chest", "name": "Mid Chest" }, …]
   },
   "cues": ["Bench at 30–45° …", …],
-  "mistakes": ["Hips lifting off the bench …", …]
+  "mistakes": ["Hips lifting off the bench …", …],
+  "images": [ … ]
 }
 ```
 
-## Später: Bilder
+## Bilder
 
-Bilder sind bewusst noch nicht Teil der API. Kommen eigene Bilder dazu, bekommt die Übung ein Feld
-`images` mit URLs; das ist eine Erweiterung und bleibt in `v1`.
+Jede Übung hat ein Foto der Start- und eines der Endstellung (WebP, 1536 × 1024, rund 55 KB).
+Halteübungen wie Unterarm- und Seitstütz haben nur das Startbild, das die gehaltene Position zeigt.
+Die Fotos liegen in der Tabelle `exercise_image` (Spalte `data`, `bytea`) und sind mit KI erstellt.
+
+- **Liste und Details** nennen die Fotos in `images`, Start vor Ende. Die App zeigt das Startbild in
+  der Liste und auf der Detailseite Start- und Endbild im Wechsel.
+- **`GET /exercises/{id}/images/{start|end}`** liefert die Datei. Fehlt das Bild, kommt `404`, eine
+  andere Stellung als `start`/`end` gibt `400`.
+- **Caching:** Die URL in `images` enthält `v`, die ersten zwölf Zeichen des MD5 der Datei. Passt `v`,
+  antwortet die API mit `Cache-Control: max-age=31536000, public, immutable`; ein neues Bild bekommt
+  eine neue URL. Ohne `v` darf ein Bild einen Tag im Cache bleiben. In der API liegen Liste und
+  Dateien im Speicher.
