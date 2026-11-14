@@ -13,7 +13,7 @@ class SecurityHeadersFilterTest {
 
     @Test
     void locksDownJsonResponses() throws Exception {
-        MockHttpServletResponse response = call("/api/v1/muscles");
+        MockHttpServletResponse response = call("/api/v1/exercises");
 
         assertThat(response.getHeader("Content-Security-Policy")).startsWith("default-src 'none'");
         assertThat(response.getHeader("Strict-Transport-Security")).contains("max-age=31536000");

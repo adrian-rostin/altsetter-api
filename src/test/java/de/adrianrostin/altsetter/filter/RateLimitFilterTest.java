@@ -31,7 +31,7 @@ class RateLimitFilterTest {
     @Test
     void letsABurstUpToTheCapacityThroughAndReportsWhatIsLeft() throws Exception {
         for (int i = 0; i < CAPACITY; i++) {
-            MockHttpServletResponse response = call("/api/v1/muscles", "203.0.113.1", null);
+            MockHttpServletResponse response = call("/api/v1/exercises", "203.0.113.1", null);
             assertThat(response.getStatus()).isEqualTo(200);
             assertThat(response.getHeader(RateLimitFilter.LIMIT_HEADER)).isEqualTo(String.valueOf(CAPACITY));
             assertThat(response.getHeader(RateLimitFilter.REMAINING_HEADER))
@@ -43,7 +43,7 @@ class RateLimitFilterTest {
     void answersFurtherRequestsWith429ProblemDetailsAndRetryAfter() throws Exception {
         exhaust("203.0.113.2", null);
 
-        MockHttpServletResponse response = call("/api/v1/muscles", "203.0.113.2", null);
+        MockHttpServletResponse response = call("/api/v1/exercises", "203.0.113.2", null);
 
         assertThat(response.getStatus()).isEqualTo(429);
         assertThat(response.getContentType()).startsWith("application/problem+json");
@@ -59,7 +59,7 @@ class RateLimitFilterTest {
     void answersInTheRequestedLanguage() throws Exception {
         exhaust("203.0.113.8", null);
 
-        MockHttpServletRequest request = new MockHttpServletRequest("GET", "/api/v1/muscles");
+        MockHttpServletRequest request = new MockHttpServletRequest("GET", "/api/v1/exercises");
         request.setRemoteAddr("203.0.113.8");
         request.addHeader("Accept-Language", "en-US,en;q=0.9");
         MockHttpServletResponse response = new MockHttpServletResponse();
@@ -74,16 +74,16 @@ class RateLimitFilterTest {
     void countsEveryVisitorSeparately() throws Exception {
         exhaust("203.0.113.3", null);
 
-        assertThat(call("/api/v1/muscles", "203.0.113.4", null).getStatus()).isEqualTo(200);
+        assertThat(call("/api/v1/exercises", "203.0.113.4", null).getStatus()).isEqualTo(200);
     }
 
     @Test
     void identifiesVisitorsBehindCloudflareByTheirOwnIp() throws Exception {
         exhaust(CLOUDFLARE_NODE, "198.51.100.1");
 
-        assertThat(call("/api/v1/muscles", CLOUDFLARE_NODE, "198.51.100.1").getStatus())
+        assertThat(call("/api/v1/exercises", CLOUDFLARE_NODE, "198.51.100.1").getStatus())
                 .isEqualTo(429);
-        assertThat(call("/api/v1/muscles", CLOUDFLARE_NODE, "198.51.100.2").getStatus())
+        assertThat(call("/api/v1/exercises", CLOUDFLARE_NODE, "198.51.100.2").getStatus())
                 .isEqualTo(200);
     }
 
@@ -91,7 +91,7 @@ class RateLimitFilterTest {
     void ignoresTheCloudflareHeaderFromAnyoneElse() throws Exception {
         exhaust("203.0.113.6", "198.51.100.3");
 
-        assertThat(call("/api/v1/muscles", "203.0.113.6", "198.51.100.4").getStatus())
+        assertThat(call("/api/v1/exercises", "203.0.113.6", "198.51.100.4").getStatus())
                 .isEqualTo(429);
     }
 
@@ -99,7 +99,7 @@ class RateLimitFilterTest {
     void ignoresACloudflareHeaderThatIsNoIpAddress() throws Exception {
         exhaust(CLOUDFLARE_NODE, "not-an-ip");
 
-        assertThat(call("/api/v1/muscles", CLOUDFLARE_NODE, "something-else").getStatus())
+        assertThat(call("/api/v1/exercises", CLOUDFLARE_NODE, "something-else").getStatus())
                 .as("beide zählen als die Cloudflare-IP selbst")
                 .isEqualTo(429);
     }
@@ -108,10 +108,10 @@ class RateLimitFilterTest {
     void rejectedResponsesAreNeverCached() throws Exception {
         exhaust("203.0.113.7", null);
 
-        MockHttpServletResponse response = call("/api/v1/muscles", "203.0.113.7", null);
+        MockHttpServletResponse response = call("/api/v1/exercises", "203.0.113.7", null);
 
         assertThat(response.getHeader("Cache-Control")).isEqualTo("no-store");
-        assertThat(response.getContentAsString()).contains("\"instance\":\"/api/v1/muscles\"");
+        assertThat(response.getContentAsString()).contains("\"instance\":\"/api/v1/exercises\"");
     }
 
     @Test
@@ -138,7 +138,7 @@ class RateLimitFilterTest {
 
     private void exhaust(String remoteAddress, String cloudflareIp) throws ServletException, IOException {
         for (int i = 0; i < CAPACITY; i++) {
-            call("/api/v1/muscles", remoteAddress, cloudflareIp);
+            call("/api/v1/exercises", remoteAddress, cloudflareIp);
         }
     }
 

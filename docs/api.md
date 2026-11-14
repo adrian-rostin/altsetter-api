@@ -10,8 +10,10 @@ Aufbau und Entscheidungen hinter der API. Die lebende Dokumentation liefert Swag
 - **Nur lesen:** Alle Endpunkte sind `GET`. Die Daten liegen dauerhaft in der Datenbank und werden
   nur von Hand dort geändert; eine Admin-Oberfläche kann später dazukommen.
 - **Einstieg:** `GET /api` nennt Version und Links, `GET /api/health` meldet `UP` oder `DOWN` (503).
-- **Nur was die App braucht:** Muskeln, Muskelgruppen und alle Übungen beim Start, Details beim
-  Öffnen einer Übung. Gefiltert wird in der App, weil sie ohnehin alles kennt.
+- **Nur was die App braucht:** alle Übungen beim Start, Details beim Öffnen einer Übung. Gefiltert
+  wird in der App, weil sie ohnehin alles kennt. Muskeln und Muskelgruppen ändern sich nicht und
+  stehen fest in der App; die API nutzt sie aus der Datenbank nur intern (Namen und Reihenfolge der
+  Muskeln in den Übungen) und liefert sie nicht mehr einzeln aus.
 - **Ein ID-System, englisch und für alle Sprachen gleich:** Muskelgruppen wie `shoulders`, Muskeln wie
   `side-delts`, Übungen wie `lat-pulldown`, Equipment wie `dumbbell`. Format: `[a-z0-9]+(-[a-z0-9]+)*`,
   höchstens 64 Zeichen. Die App benutzt dieselben IDs in ihren Pfaden
@@ -26,29 +28,6 @@ Aufbau und Entscheidungen hinter der API. Die lebende Dokumentation liefert Swag
 - **Caching:** `ETag` und `Cache-Control: max-age=300, public`; Fehler mit `no-store`. In der API
   liegen Katalog, sortierte Übungsliste und Details je Sprache im Speicher; nach einer Änderung der Daten
   wird die API neu gestartet.
-
-## Muskeln
-
-| Endpunkt                     | Liefert                                                        |
-| ---------------------------- | -------------------------------------------------------------- |
-| `GET /muscle-families`       | Alle Gruppen (z. B. Schulter) mit den IDs ihrer Anteile        |
-| `GET /muscles`               | Alle Muskeln mit Gruppe, Region, Beschreibung und Mesh-Namen   |
-
-Die App lädt beide Listen einmal beim Start und weiß damit, welches Mesh im 3D-Modell zu welchem
-Muskel gehört. Die Reihenfolge ist fest: von oben nach unten am Körper.
-
-```json
-// Ein Eintrag aus GET /muscles
-{
-  "id": "side-delts",
-  "familyId": "shoulders",
-  "name": "Seitliche Schulter",
-  "latinName": "Deltoideus – Pars acromialis",
-  "region": "Schultern",
-  "summary": "…",
-  "meshNames": ["Acromial part of deltoid muscle"]
-}
-```
 
 ## Übungen
 

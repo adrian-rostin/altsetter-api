@@ -23,14 +23,13 @@ Swagger UI gibt es nur lokal unter `http://localhost:8080/api/docs` (siehe Lokal
 | ----------------------------------------- | ---------------------------------------------------------------- |
 | `GET /api`                                | Name und Version der API, Links zu Endpunkten, Doku und Health   |
 | `GET /api/health`                         | `UP`, wenn API und Datenbank antworten, sonst `DOWN` mit `503`   |
-| `GET /api/v1/muscle-families`             | Muskelgruppen mit ihren Anteilen                                 |
-| `GET /api/v1/muscles`                     | Alle Muskeln mit ihren Meshes im 3D-Modell                       |
 | `GET /api/v1/exercises`                   | Alle Übungen, seitenweise und nach Name sortiert                 |
 | `GET /api/v1/exercises/{id}`              | Alle Angaben zu einer Übung                                      |
 | `GET /api/v1/exercises/{id}/images/{pos}` | Foto der Übung in Start- (`start`) oder Endstellung (`end`), WebP |
 
-Die API liefert genau das, was die App braucht: Beim Start lädt sie Muskeln, Muskelgruppen und alle
-Übungen, beim Öffnen einer Übung deren Details. IDs sind englisch, klein und mit Bindestrichen
+Die API liefert genau das, was die App braucht: Beim Start lädt sie alle Übungen, beim Öffnen einer
+Übung deren Details. Die Muskeln ändern sich nicht und stehen fest in der App; die API nutzt sie aus
+der Datenbank nur intern, für Muskelnamen und Reihenfolge in den Übungen. IDs sind englisch, klein und mit Bindestrichen
 (`upper-chest`, `lat-pulldown`) und in allen Sprachen gleich; dieselben IDs stehen in den Pfaden der
 App. Listen haben ihre Einträge immer unter `items`. Mehr zum Entwurf in [`docs/api.md`](docs/api.md).
 
@@ -47,7 +46,7 @@ Repositories den Datenbankzugriff. Nach außen gehen ausschließlich DTOs.
 
 ```
 src/main/java/de/adrianrostin/altsetter/
-├── controller/    REST-Endpunkte (Status, Muskeln, Übungen)
+├── controller/    REST-Endpunkte (Status, Übungen mit Fotos)
 ├── service/       Logik: Übungen, Health-Check, Muskelkatalog im Speicher
 ├── repository/    Spring-Data-JPA-Repositories, nur Lesemethoden
 ├── entity/        JPA-Entities, unveränderlich (@Immutable), Enums mit festem Code
