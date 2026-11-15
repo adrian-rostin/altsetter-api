@@ -197,9 +197,19 @@ class ExerciseControllerIT {
         }
 
         @ParameterizedTest(name = "{0}")
-        @ValueSource(strings = {"q=", "q=%20", "q=bank&size=0", "q=bank&size=101", "q=bank&page=-1"})
+        @ValueSource(strings = {"q=", "q=bank&size=0", "q=bank&size=101", "q=bank&page=-1"})
         void rejectsInvalidQueries(String query) {
             assertThat(mvc.get().uri("/api/v1/exercises/search?" + query))
+                    .hasStatus(HttpStatus.BAD_REQUEST)
+                    .bodyJson()
+                    .extractingPath("$.type")
+                    .isEqualTo("/api/problems/invalid-parameter");
+        }
+
+        /** As a parameter: in uri() a %20 would be encoded again and arrive as the text "%20". */
+        @Test
+        void rejectsBlankQueries() {
+            assertThat(mvc.get().uri("/api/v1/exercises/search").param("q", "   "))
                     .hasStatus(HttpStatus.BAD_REQUEST)
                     .bodyJson()
                     .extractingPath("$.type")
