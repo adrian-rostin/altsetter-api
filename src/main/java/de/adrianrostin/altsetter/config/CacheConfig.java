@@ -3,6 +3,7 @@ package de.adrianrostin.altsetter.config;
 import de.adrianrostin.altsetter.service.ExerciseImageService;
 import de.adrianrostin.altsetter.service.ExerciseService;
 import de.adrianrostin.altsetter.service.MuscleService;
+import de.adrianrostin.altsetter.service.SimilarExerciseService;
 import java.util.List;
 import org.springframework.boot.cache.autoconfigure.CacheManagerCustomizer;
 import org.springframework.cache.annotation.EnableCaching;
@@ -24,6 +25,8 @@ public class CacheConfig {
                 MuscleService.CACHE,
                 ExerciseService.SUMMARY_CACHE,
                 ExerciseService.DETAIL_CACHE,
+                ExerciseService.MUSCLE_CACHE,
+                SimilarExerciseService.CACHE,
                 ExerciseImageService.INFO_CACHE,
                 ExerciseImageService.FILE_CACHE));
     }

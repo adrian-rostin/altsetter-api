@@ -32,6 +32,13 @@ class MuscleCatalogTest {
     }
 
     @Test
+    void resolvesFamiliesToTheirPartsAndMusclesToThemselves() {
+        assertThat(catalog.muscleIdsOf("shoulders")).contains(List.of("front-delts"));
+        assertThat(catalog.muscleIdsOf("upper-chest")).contains(List.of("upper-chest"));
+        assertThat(catalog.muscleIdsOf("calves")).isEmpty();
+    }
+
+    @Test
     void treatsAMissingMuscleAsBrokenData() {
         assertThatThrownBy(() -> catalog.muscle("calves"))
                 .isInstanceOf(IllegalStateException.class)

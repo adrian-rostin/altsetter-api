@@ -24,12 +24,16 @@ Swagger UI gibt es nur lokal unter `http://localhost:8080/api/docs` (siehe Lokal
 | `GET /api`                                | Name und Version der API, Links zu Endpunkten, Doku und Health   |
 | `GET /api/health`                         | `UP`, wenn API und Datenbank antworten, sonst `DOWN` mit `503`   |
 | `GET /api/v1/exercises`                   | Alle Übungen, seitenweise und nach Name sortiert                 |
+| `GET /api/v1/exercises/search?q=…`        | Übungen zur Eingabe im Suchfeld, die besten Treffer zuerst       |
 | `GET /api/v1/exercises/{id}`              | Alle Angaben zu einer Übung                                      |
+| `GET /api/v1/exercises/{id}/similar`      | Bis zu fünf ähnliche Übungen, nach gemeinsamen Muskeln sortiert  |
 | `GET /api/v1/exercises/{id}/images/{pos}` | Foto der Übung in Start- (`start`) oder Endstellung (`end`), WebP |
+| `GET /api/v1/muscles/{id}/exercises`      | Übungen eines Muskels oder einer Gruppe, seitenweise, mit Details |
 
-Die API liefert genau das, was die App braucht: Beim Start lädt sie alle Übungen, beim Öffnen einer
-Übung deren Details. Die Muskeln ändern sich nicht und stehen fest in der App; die API nutzt sie aus
-der Datenbank nur intern, für Muskelnamen und Reihenfolge in den Übungen. IDs sind englisch, klein und mit Bindestrichen
+Die API liefert genau das, was die App braucht: Tippt man einen Muskel an, lädt sie die erste Seite
+seiner Übungen mit allen Details, beim Scrollen die nächste; Suche, ähnliche Übungen und Links laden
+einzelne. Die Muskeln selbst ändern sich nicht und stehen fest in der App; die API nutzt sie aus der
+Datenbank für Muskelnamen, Reihenfolge und die Übungen je Muskel. IDs sind englisch, klein und mit Bindestrichen
 (`upper-chest`, `lat-pulldown`) und in allen Sprachen gleich; dieselben IDs stehen in den Pfaden der
 App. Listen haben ihre Einträge immer unter `items`. Mehr zum Entwurf in [`docs/api.md`](docs/api.md).
 

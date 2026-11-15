@@ -151,6 +151,87 @@ class ExerciseControllerIT {
         }
     }
 
+    /** The tiers are tested in ExerciseSearchServiceTest; here the endpoint with the test catalog. */
+    @Nested
+    class Search {
+
+        @Test
+        void findsNamesByTheirStart() {
+            assertThat(mvc.get().uri("/api/v1/exercises/search?q=seit"))
+                    .hasStatusOk()
+                    .bodyJson()
+                    .extractingPath("$.items[*].id")
+                    .asArray()
+                    .containsExactly("dumbbell-lateral-raise");
+        }
+
+        @Test
+        void sortsWordMatchesByName() {
+            assertThat(mvc.get().uri("/api/v1/exercises/search?q=Kurzhantel"))
+                    .hasStatusOk()
+                    .bodyJson()
+                    .extractingPath("$.items[*].id")
+                    .asArray()
+                    .containsExactly("reverse-dumbbell-fly", "dumbbell-lateral-raise");
+        }
+
+        @Test
+        void findsTheEnglishNameInTheGermanView() {
+            var json = assertThat(mvc.get().uri("/api/v1/exercises/search?q=bench"))
+                    .hasStatusOk()
+                    .bodyJson();
+
+            json.extractingPath("$.items[*].id").asArray().containsExactly("barbell-bench-press");
+            json.extractingPath("$.items[0].name").isEqualTo("Bankdrücken mit der Langhantel");
+        }
+
+        @Test
+        void pagesThroughAllMatches() {
+            var json = assertThat(mvc.get().uri("/api/v1/exercises/search?q=kurzhantel&page=1&size=1"))
+                    .hasStatusOk()
+                    .bodyJson();
+
+            json.extractingPath("$.items[*].id").asArray().containsExactly("dumbbell-lateral-raise");
+            json.extractingPath("$.totalItems").isEqualTo(2);
+            json.extractingPath("$.totalPages").isEqualTo(2);
+        }
+
+        @ParameterizedTest(name = "{0}")
+        @ValueSource(strings = {"q=", "q=%20", "q=bank&size=0", "q=bank&size=101", "q=bank&page=-1"})
+        void rejectsInvalidQueries(String query) {
+            assertThat(mvc.get().uri("/api/v1/exercises/search?" + query))
+                    .hasStatus(HttpStatus.BAD_REQUEST)
+                    .bodyJson()
+                    .extractingPath("$.type")
+                    .isEqualTo("/api/problems/invalid-parameter");
+        }
+    }
+
+    /** The ranking itself is tested in SimilarExerciseServiceTest; here only the endpoint. */
+    @Nested
+    class Similar {
+
+        @Test
+        void leavesTheListEmptyWhenNothingFits() {
+            // Bench press, lateral raise and reverse fly share no main muscle with each other.
+            assertThat(mvc.get().uri("/api/v1/exercises/barbell-bench-press/similar"))
+                    .hasStatusOk()
+                    .bodyJson()
+                    .extractingPath("$.items")
+                    .asArray()
+                    .isEmpty();
+        }
+
+        @Test
+        void answersUnknownExercisesWith404() {
+            assertThat(mvc.get().uri("/api/v1/exercises/handstand-deadlift/similar"))
+                    .hasStatus(HttpStatus.NOT_FOUND)
+                    .bodyJson()
+                    .extractingPath("$.type")
+                    .isEqualTo("/api/problems/not-found");
+        }
+    }
+
     @Nested
     class Images {
 

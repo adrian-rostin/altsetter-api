@@ -11,7 +11,9 @@ public class NotFoundException extends RuntimeException {
     public enum Resource {
         EXERCISE("exercise"),
         /** Bild einer Übung; {@code id} ist die Übung. */
-        IMAGE("image");
+        IMAGE("image"),
+        /** Muskel oder Muskelgruppe. */
+        MUSCLE("muscle");
 
         private final String key;
 

@@ -2,18 +2,22 @@ package de.adrianrostin.altsetter.controller;
 
 import de.adrianrostin.altsetter.dto.ExerciseDetailDto;
 import de.adrianrostin.altsetter.dto.ExerciseSummaryDto;
+import de.adrianrostin.altsetter.dto.ListResponse;
 import de.adrianrostin.altsetter.dto.PageResponse;
 import de.adrianrostin.altsetter.entity.CodedEnum;
 import de.adrianrostin.altsetter.entity.ImagePosition;
 import de.adrianrostin.altsetter.entity.Language;
 import de.adrianrostin.altsetter.service.ExerciseImageService;
 import de.adrianrostin.altsetter.service.ExerciseImageService.ImageFile;
+import de.adrianrostin.altsetter.service.ExerciseSearchService;
 import de.adrianrostin.altsetter.service.ExerciseService;
+import de.adrianrostin.altsetter.service.SimilarExerciseService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import java.time.Duration;
@@ -42,6 +46,12 @@ public class ExerciseController {
 
     private static final String POSITION = ImagePosition.PATTERN;
 
+    /** Längste Sucheingabe. */
+    private static final int MAX_QUERY = 50;
+
+    /** Treffer pro Seite der Suche, wenn nichts angegeben ist. */
+    private static final String SEARCH_PAGE_SIZE = "20";
+
     /** Bilder mit Version in der URL ändern sich nie: Ein neues Bild bekommt eine neue URL. */
     private static final CacheControl IMMUTABLE =
             CacheControl.maxAge(Duration.ofDays(365)).cachePublic().immutable();
@@ -51,6 +61,8 @@ public class ExerciseController {
 
     private final ExerciseService service;
     private final ExerciseImageService images;
+    private final SimilarExerciseService similar;
+    private final ExerciseSearchService search;
 
     @Operation(summary = "Alle Übungen", description = "Seitenweise, sortiert nach dem Namen in der gewählten Sprache.")
     @GetMapping
@@ -63,12 +75,39 @@ public class ExerciseController {
         return PageResponse.of(service.summaries(Language.of(locale)), page, size);
     }
 
+    @Operation(
+            summary = "Übungen suchen",
+            description = "Alle Treffer, seitenweise. Nach Name, Hauptmuskel und Equipment, ohne Rücksicht auf"
+                    + " Groß-/Kleinschreibung und Umlaute. Die besten Treffer zuerst: Name beginnt mit der Eingabe,"
+                    + " dann Wortanfänge, dann Teilwörter, dann Muskel/Equipment, dann der Name in anderen Sprachen.")
+    @GetMapping("/search")
+    public PageResponse<ExerciseSummaryDto> search(
+            @Parameter(description = "Eingabe, z. B. „Landm“") @RequestParam @NotBlank @Size(max = MAX_QUERY) String q,
+            @Parameter(description = "Ab 0") @RequestParam(defaultValue = "0") @Min(0) @Max(MAX_PAGE) int page,
+            @Parameter(description = "Treffer pro Seite")
+                    @RequestParam(defaultValue = SEARCH_PAGE_SIZE)
+                    @Min(1) @Max(MAX_PAGE_SIZE) int size,
+            Locale locale) {
+        return PageResponse.of(search.search(q, Language.of(locale)), page, size);
+    }
+
     @Operation(summary = "Eine Übung", description = "Mit Muskelnamen und Hinweisen zur Ausführung.")
     @GetMapping("/{id}")
     public ExerciseDetailDto detail(
             @PathVariable @Pattern(regexp = ApiPaths.ID_PATTERN) @Size(max = ApiPaths.ID_MAX_LENGTH) String id,
             Locale locale) {
         return service.detail(id, Language.of(locale));
+    }
+
+    @Operation(
+            summary = "Ähnliche Übungen",
+            description = "Bis zu fünf Übungen mit möglichst denselben Haupt- und mitarbeitenden Muskeln, die"
+                    + " ähnlichste zuerst. Passt nichts gut genug, sind es weniger oder keine.")
+    @GetMapping("/{id}/similar")
+    public ListResponse<ExerciseSummaryDto> similar(
+            @PathVariable @Pattern(regexp = ApiPaths.ID_PATTERN) @Size(max = ApiPaths.ID_MAX_LENGTH) String id,
+            Locale locale) {
+        return ListResponse.of(similar.similar(id, Language.of(locale)));
     }
 
     @Operation(

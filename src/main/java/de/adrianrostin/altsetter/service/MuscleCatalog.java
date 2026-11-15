@@ -6,6 +6,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -47,6 +48,20 @@ public final class MuscleCatalog {
             throw new IllegalStateException("Muskel '%s' fehlt im Katalog".formatted(id));
         }
         return muscle;
+    }
+
+    /**
+     * Die Muskeln hinter einer Kennung: bei einer Muskelgruppe (z. B. {@code shoulders}) alle ihre
+     * Anteile, bei einem Muskel nur er selbst; leer, wenn es die Kennung nicht gibt.
+     */
+    public Optional<List<String>> muscleIdsOf(String muscleOrFamilyId) {
+        return families.stream()
+                .filter(family -> family.id().equals(muscleOrFamilyId))
+                .findFirst()
+                .map(MuscleFamilyDto::muscleIds)
+                .or(() -> musclesById.containsKey(muscleOrFamilyId)
+                        ? Optional.of(List.of(muscleOrFamilyId))
+                        : Optional.empty());
     }
 
     /** Sortiert Muskel-IDs so wie in der App (von oben nach unten am Körper); unbekannte ans Ende. */

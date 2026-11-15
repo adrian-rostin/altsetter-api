@@ -10,10 +10,11 @@ Aufbau und Entscheidungen hinter der API. Die lebende Dokumentation liefert Swag
 - **Nur lesen:** Alle Endpunkte sind `GET`. Die Daten liegen dauerhaft in der Datenbank und werden
   nur von Hand dort geändert; eine Admin-Oberfläche kann später dazukommen.
 - **Einstieg:** `GET /api` nennt Version und Links, `GET /api/health` meldet `UP` oder `DOWN` (503).
-- **Nur was die App braucht:** alle Übungen beim Start, Details beim Öffnen einer Übung. Gefiltert
-  wird in der App, weil sie ohnehin alles kennt. Muskeln und Muskelgruppen ändern sich nicht und
-  stehen fest in der App; die API nutzt sie aus der Datenbank nur intern (Namen und Reihenfolge der
-  Muskeln in den Übungen) und liefert sie nicht mehr einzeln aus.
+- **Nur was die App braucht:** Tippt man einen Muskel an, kommt die erste Seite seiner Übungen mit
+  allen Details, beim Scrollen die nächste; Suche, ähnliche Übungen und Links laden
+  einzelne. Muskeln und Muskelgruppen ändern sich nicht und stehen fest in der App; die API nutzt
+  sie aus der Datenbank nur intern (Namen und Reihenfolge der Muskeln in den Übungen) und liefert sie
+  nicht mehr einzeln aus.
 - **Ein ID-System, englisch und für alle Sprachen gleich:** Muskelgruppen wie `shoulders`, Muskeln wie
   `side-delts`, Übungen wie `lat-pulldown`, Equipment wie `dumbbell`. Format: `[a-z0-9]+(-[a-z0-9]+)*`,
   höchstens 64 Zeichen. Die App benutzt dieselben IDs in ihren Pfaden
@@ -34,11 +35,14 @@ Aufbau und Entscheidungen hinter der API. Die lebende Dokumentation liefert Swag
 | Endpunkt                           | Liefert                                                 |
 | ---------------------------------- | ------------------------------------------------------- |
 | `GET /exercises`                   | Alle Übungen, seitenweise, nach Name in der Sprache     |
+| `GET /exercises/search?q=…`        | Suche, die besten Treffer zuerst (siehe Suche)          |
 | `GET /exercises/{id}`              | Alle Details einer Übung                                |
+| `GET /exercises/{id}/similar`      | Bis zu fünf ähnliche Übungen (siehe Ähnliche Übungen)   |
 | `GET /exercises/{id}/images/{pos}` | Foto in Start- oder Endstellung (siehe Bilder)          |
+| `GET /muscles/{id}/exercises`      | Alle Übungen eines Muskels oder einer Gruppe, mit Details |
 
-`GET /exercises` nimmt `page` (ab 0) und `size` (1–100, Standard 20). Die App holt alle 142 Übungen
-mit `size=100` in zwei Abrufen.
+`GET /exercises` nimmt `page` (ab 0) und `size` (1–100, Standard 20). Die App braucht die ganze Liste
+nicht; sie lädt Übungen je Muskel (siehe unten).
 
 ```json
 // ExerciseSummary – Listeneintrag
@@ -74,6 +78,47 @@ mit `size=100` in zwei Abrufen.
   "images": [ … ]
 }
 ```
+
+### Übungen je Muskel
+
+`GET /muscles/{id}/exercises?page=0&size=20` liefert alle Übungen, die einen Muskel als Haupt- oder
+mitarbeitenden Muskel trainieren, jeweils mit allen Angaben wie `GET /exercises/{id}`, seitenweise
+wie `GET /exercises`. Die ID ist ein Muskel (`side-delts`) oder eine Muskelgruppe (`shoulders`,
+dann zählen alle ihre Anteile). Unbekannte IDs geben `404`.
+
+Die Reihenfolge ist die der Übungskarte in der App: je Anteil (von oben nach unten am Körper) seine
+Hauptübungen, danach alle, bei denen ein Anteil nur mitarbeitet; jeweils nach Name, jede Übung
+einmal. So hängt die App die Seiten einfach aneinander. Sie lädt die erste Seite, wenn man einen
+Muskel antippt, und die nächsten beim Scrollen; die Übungsseiten öffnen sich danach ohne weiteren
+Abruf.
+
+### Suche
+
+`GET /exercises/search?q=…&page=0&size=20` liefert alle Übungen (wie in der Liste) zur Eingabe im
+Suchfeld der App, seitenweise wie `GET /exercises` (`page` ab 0, `size` 1–100, Standard 20; dazu
+`totalItems`, `totalPages`). Die App lädt beim Scrollen die nächste Seite nach. Leere Eingaben geben
+`400`. Groß-/Kleinschreibung,
+Umlaute, Akzente und Satzzeichen zählen nicht. Die Treffer kommen in Stufen, innerhalb einer Stufe
+nach Name:
+
+1. Der Name beginnt mit der Eingabe ("Landm" → Landmine Press, schon ab "L" weit oben).
+2. Jedes Wort der Eingabe beginnt ein Wort im Namen ("curls lang" → Langhantel-Curls).
+3. Jedes Wort der Eingabe steht irgendwo im Namen ("drücken" → Schulterdrücken).
+4. Jedes Wort beginnt ein Wort in Name, Hauptmuskeln oder Equipment ("bizeps", "kurzhantel").
+5. Der Name in einer anderen Sprache passt ("bench press" bei deutscher Oberfläche).
+
+### Ähnliche Übungen
+
+`GET /exercises/{id}/similar` liefert bis zu fünf Übungen (wie in der Liste), die ähnlichste zuerst:
+
+- Jede Übung ist ein Vektor über die Muskeln, Hauptmuskeln zählen 2, mitarbeitende 1. Ähnlichkeit ist
+  der Kosinus zweier Vektoren (0 bis 1), damit Übungen mit vielen Muskeln nicht allein deshalb vorn
+  landen. Gleiche Muskeln in gleichen Rollen ergeben 1, z. B. Schrägbank-Flys zu Cable Flys auf der
+  Schrägbank.
+- Infrage kommt eine Übung nur, wenn sie einen Hauptmuskel der Übung trainiert und die Übung
+  umgekehrt einen ihrer Hauptmuskeln. So zählen vertauschte Rollen (Hammer-Curls und Hammer-Curls am
+  Seilzug), aber nicht Übungen, die den Muskel nur nebenbei treffen.
+- Unter 0,5 passt es nicht mehr. Dann sind es lieber weniger als fünf oder keine.
 
 ## Bilder
 
