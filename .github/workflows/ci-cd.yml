@@ -37,9 +37,9 @@ jobs:
       - name: Checkstyle (Linter)
         run: ./mvnw -B -ntp checkstyle:check
 
+  # Läuft parallel zu "quality", damit die Pipeline schneller ist; "image" wartet auf beide.
   test:
     name: Build & Test
-    needs: quality
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -67,7 +67,7 @@ jobs:
 
   image:
     name: Docker image
-    needs: test
+    needs: [quality, test]
     runs-on: ubuntu-latest
     permissions:
       contents: read
